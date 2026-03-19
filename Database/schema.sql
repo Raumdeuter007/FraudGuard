@@ -1,11 +1,14 @@
 -- Users
 CREATE TABLE users (
-    id            TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-    email         TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    name          TEXT,
-    created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    email               TEXT NOT NULL UNIQUE,
+    hashed_password     TEXT NOT NULL,
+    is_active           BOOLEAN NOT NULL DEFAULT 1,
+    is_superuser        BOOLEAN NOT NULL DEFAULT 0,
+    is_verified         BOOLEAN NOT NULL DEFAULT 0,
+    name                TEXT,
+    created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
 -- Original Files
