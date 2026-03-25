@@ -2,7 +2,7 @@ import os
 import shutil
 import tempfile as tf
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/files", tags=["files"])
 
 @router.post("/upload")
 async def upload(
+    request: Request,
     name: str,
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_async_session),
@@ -27,7 +28,7 @@ async def upload(
         temp_path = None
         file.filename = file.filename or ""
         original_ext = os.path.splitext(file.filename)[1]
-        file_name = f"{name}{original_ext}"
+        file_name = f"{str(user.id)}{name}{original_ext}"
 
         try:
             with tf.NamedTemporaryFile(delete=False, suffix=original_ext) as tmp:
@@ -42,31 +43,65 @@ async def upload(
                     detail=f"Unsupported file type: {mime_type}. Allowed: images and PDFs only.",
                 )
             
+           # --- Read bytes once for reuse ---
             with open(temp_path, "rb") as f:
-                upload_result = imageKit.files.upload(
-                    file=f,
-                    file_name=file_name,
-                    folder="/Uploads",
-                    use_unique_file_name=True,
-                    tags=["backend-upload"],
-                )
-            
-                db_file = FileModel(
-                    user_id=str(user.id),
-                    imagekit_file_id=upload_result.file_id,
-                    imagekit_url=upload_result.url,
-                    file_path=upload_result.file_path,
-                    original_name=file_name,
-                    mime_type=mime_type,
-                    size_bytes=upload_result.size,
-                    upload_status="done",
-                )
-                session.add(db_file)
-                await session.commit()
-                await session.refresh(db_file)
+                file_bytes = f.read()
+    
+            # --- Upload original to ImageKit ---
+            upload_result = imageKit.files.upload(
+                file=file_bytes,
+                file_name=file_name,
+                folder="/Uploads",
+                use_unique_file_name=True,
+                tags=["backend-upload"],
+            )
+    
+            db_file = FileModel(
+                user_id=str(user.id),
+                imagekit_file_id=upload_result.file_id,
+                imagekit_url=upload_result.url,
+                file_path=upload_result.file_path,
+                original_name=file_name,
+                mime_type=mime_type,
+                size_bytes=upload_result.size,
+                upload_status="done",
+            )
+            session.add(db_file)
+            await session.commit()
+            await session.refresh(db_file)
+            # --- Run tampering detection ---
+            detector = request.app.state.detector
+            # if mime_type == "application/pdf":
+            #     # Convert each PDF page to image, run inference on first page only
+            #     # Extend to multi-page by iterating if needed
+            #     import fitz  # pymupdf
+            #     pdf_doc = fitz.open(stream=file_bytes, filetype="pdf")
+            #     pix = pdf_doc[0].get_pixmap(dpi=150)
+            #     import numpy as np
+            #     page_rgb = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
+            #     import cv2
+            #     if pix.n == 4:  # RGBA
+            #         page_rgb = cv2.cvtColor(page_rgb, cv2.COLOR_RGBA2RGB)
+            #     import io
+            #     _, inference_bytes = cv2.imencode(".png", cv2.cvtColor(page_rgb, cv2.COLOR_RGB2BGR))
+            #     inference_bytes = inference_bytes.tobytes()
+            # else:
+            inference_bytes = file_bytes
+            mask_bytes, overlay_bytes = detector.predict_and_encode(inference_bytes)
+
+            # --- Upload overlay (heatmap) to ImageKit ---
+            overlay_name = f"{str(user.id)}{name}_overlay.png"
+            overlay_upload = imageKit.files.upload(
+                file=overlay_bytes,
+                file_name=overlay_name,
+                folder="/Results",
+                use_unique_file_name=True,
+                tags=["detection-overlay"],
+            )
 
             return db_file
-
+        except HTTPException:
+            raise   
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
         finally:
