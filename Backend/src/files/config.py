@@ -3,5 +3,5 @@ ALLOWED_MIME_TYPES = {
     "image/png",
     "image/webp",
     "image/gif",
-    "application/pdf",
+#    "application/pdf",
 }
