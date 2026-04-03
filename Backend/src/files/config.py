@@ -5,3 +5,5 @@ ALLOWED_MIME_TYPES = {
     "image/gif",
 #    "application/pdf",
 }
+
+THRESHOLD = 0.8

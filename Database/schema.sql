@@ -49,7 +49,7 @@ CREATE TABLE scans (
     heatmap_file_path         TEXT,
 
     -- results (nullable until done)
-    tamper_confidence       REAL,         -- NULL if scan_type = 'forgery'
+    tamper_percent          REAL,         -- NULL if scan_type = 'forgery'
     is_tampered             INTEGER,      -- 0 | 1 | NULL
     forgery_confidence      REAL,         -- NULL if scan_type = 'tamper'
     is_forged               INTEGER,      -- 0 | 1 | NULL
