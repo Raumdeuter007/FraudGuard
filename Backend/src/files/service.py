@@ -22,7 +22,7 @@ def get_inference_transform(output_size: int):
             mean=(0.485, 0.456, 0.406),  
             std=(0.229, 0.224, 0.225), 
         ),
-        albu.Crop(x_min=0, y_min=0, x_max=output_size, y_max=output_size),
+#       albu.Crop(x_min=0, y_min=0, x_max=output_size, y_max=output_size),
         ToTensorV2(),
     ])
  
@@ -32,7 +32,7 @@ class TamperingDetector:
     Loads IML-ViT once at startup and exposes a single predict() method.
     """
  
-    def __init__(self, ckpt_path: str, output_size: int = 512):
+    def __init__(self, ckpt_path: str, output_size: int = 1024):
         self.output_size = output_size
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"TamperingDetector using device: {self.device}")
@@ -153,7 +153,7 @@ class TamperingDetector:
  
         # 6. Resize original rgb to match (it was resized in _resize_to_fit)
         resized_rgb = cv2.resize(
-            cv2.cvtColor(self._decode_image(image_bytes), cv2.COLOR_RGB2BGR),
+            cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR),
             (orig_w, orig_h),
             interpolation=cv2.INTER_AREA,
         )
@@ -167,9 +167,11 @@ class TamperingDetector:
             "overlay": overlay,
             "orig_h": orig_h,
             "orig_w": orig_w,
+            "score": float(mask.max()),
+            "mean_score": float(mask.mean()),
         }
  
-    def predict_and_encode(self, image_bytes: bytes) -> tuple[bytes, bytes]:
+    def predict_and_encode(self, image_bytes: bytes) -> tuple[bytes, bytes, float, float]:
         """
         Convenience wrapper that returns (mask_png_bytes, overlay_png_bytes).
         Suitable for direct HTTP response or ImageKit upload.
@@ -181,4 +183,4 @@ class TamperingDetector:
  
         _, overlay_buf = cv2.imencode(".png", result["overlay"])
  
-        return mask_buf.tobytes(), overlay_buf.tobytes()
+        return mask_buf.tobytes(), overlay_buf.tobytes(), result['score'], result['mean_score']

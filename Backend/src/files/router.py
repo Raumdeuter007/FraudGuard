@@ -1,14 +1,16 @@
+from datetime import datetime, timezone
 import os
 import shutil
 import tempfile as tf
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Request
+from fastapi.responses import EventSourceResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.files.models import File as FileModel 
+from src.files.models import File as FileModel, Scan 
 from src.auth.dependencies import current_active_user
-from src.files.config import ALLOWED_MIME_TYPES
+from src.files.config import ALLOWED_MIME_TYPES, THRESHOLD
 from src.auth.models import User
 from src.database import get_async_session
 from src.imagekit.client import imageKit
@@ -28,7 +30,7 @@ async def upload(
         temp_path = None
         file.filename = file.filename or ""
         original_ext = os.path.splitext(file.filename)[1]
-        file_name = f"{str(user.id)}{name}{original_ext}"
+        file_name = f"{str(user.id)}_{name}_{original_ext}"
 
         try:
             with tf.NamedTemporaryFile(delete=False, suffix=original_ext) as tmp:
@@ -43,7 +45,7 @@ async def upload(
                     detail=f"Unsupported file type: {mime_type}. Allowed: images and PDFs only.",
                 )
             
-           # --- Read bytes once for reuse ---
+            # --- Read bytes once for reuse ---
             with open(temp_path, "rb") as f:
                 file_bytes = f.read()
     
@@ -69,8 +71,11 @@ async def upload(
             session.add(db_file)
             await session.commit()
             await session.refresh(db_file)
+
             # --- Run tampering detection ---
+            start_time = datetime.now(timezone.utc)
             detector = request.app.state.detector
+            # For pdf (needs further review)
             # if mime_type == "application/pdf":
             #     # Convert each PDF page to image, run inference on first page only
             #     # Extend to multi-page by iterating if needed
@@ -87,19 +92,37 @@ async def upload(
             #     inference_bytes = inference_bytes.tobytes()
             # else:
             inference_bytes = file_bytes
-            mask_bytes, overlay_bytes = detector.predict_and_encode(inference_bytes)
+            _, overlay_bytes, score, mean_score = detector.predict_and_encode(inference_bytes)
+            is_tampered = score > THRESHOLD
 
             # --- Upload overlay (heatmap) to ImageKit ---
             overlay_name = f"{str(user.id)}{name}_overlay.png"
-            overlay_upload = imageKit.files.upload(
+            overlay_result = imageKit.files.upload(
                 file=overlay_bytes,
                 file_name=overlay_name,
                 folder="/Results",
                 use_unique_file_name=True,
                 tags=["detection-overlay"],
             )
+            end_time = datetime.now(timezone.utc)
 
-            return db_file
+            scan_file = Scan(
+                file_id=str(db_file.id),
+                scan_type="tamper",
+                heatmap_imagekit_file_id=overlay_result.file_id,
+                heatmap_imagekit_url=overlay_result.url,
+                heatmap_file_path=overlay_result.file_path,
+                tamper_percent=mean_score,
+                is_tampered=is_tampered,
+                status="done",
+                started_at=start_time,
+                completed_at=end_time,
+            )
+            session.add(scan_file)
+            await session.commit()
+            await session.refresh(scan_file)
+
+            return {"image": db_file, "mask": scan_file}
         except HTTPException:
             raise   
         except Exception as e:

@@ -61,7 +61,7 @@ class Scan(Base):
     heatmap_imagekit_url     = Column(String)
     heatmap_file_path        = Column(String)
 
-    tamper_confidence = Column(Float)
+    tamper_percent    = Column(Float)
     is_tampered       = Column(Integer)
 
     forgery_confidence = Column(Float)
