@@ -5,7 +5,7 @@ import os
 import shutil
 import tempfile as tf
 
-from fastapi import APIRouter, Depends, File, UploadFile, Request
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Request
 from fastapi.sse import EventSourceResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,8 +41,10 @@ async def upload(
 
         mime_type = magic.from_file(temp_path, mime=True)
         if mime_type not in ALLOWED_MIME_TYPES:
-            yield json.dumps({"event": "error", "detail": f"Unsupported file type: {mime_type}"})
-            return
+            raise HTTPException(
+                    status_code=415,
+                    detail=f"Unsupported file type: {mime_type}. Allowed: images and PDFs only.",
+                )
 
         with open(temp_path, "rb") as f:
             file_bytes = f.read()
