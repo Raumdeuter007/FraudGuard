@@ -1,8 +1,7 @@
-import Navbar from '../components/ui/Navbar';
-import StatusBar from '../components/ui/StatusBar';
-import UploadZone from '../features/upload/components/UploadZone';
-import SubmitRow from '../features/upload/components/SubmitRow';
-import { useUpload } from '../features/upload';
+import StatusBar from '../components/StatusBar';
+import UploadZone from '../components/UploadZone';
+import SubmitRow from '../components/SubmitRow';
+import useUpload from '../hooks/UseUpload';
 
 export default function UploadPage() {
     const {
@@ -28,7 +27,6 @@ export default function UploadPage() {
             }}
         >
             <div className="max-w-5xl mx-auto bg-paper border-2 border-border-strong shadow-[6px_6px_0_#bbb,12px_12px_0_#ddd]">
-                <Navbar />
 
                 <main className="px-10 py-9">
                     <h1 className="text-2xl font-black text-text-primary border-b border-dashed border-border-lighter pb-2 mb-2">
