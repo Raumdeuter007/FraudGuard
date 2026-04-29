@@ -2,6 +2,7 @@ import StatusBar from '../components/StatusBar';
 import UploadZone from '../components/UploadZone';
 import SubmitRow from '../components/SubmitRow';
 import useUpload from '../hooks/UseUpload';
+import { useState } from 'react';
 
 export default function UploadPage() {
     const {
@@ -16,7 +17,9 @@ export default function UploadPage() {
         handleSubmit,
     } = useUpload();
 
+    const [docName, setDocName] = useState('');
     const hasFile = file !== null;
+    const canSubmit = hasFile && docName.trim().length > 0;
 
     return (
         <div className="min-h-screen bg-page-bg"
@@ -36,6 +39,17 @@ export default function UploadPage() {
                         Supports identity cards, certificates, and legal documents
                     </p>
 
+                    <div className="flex flex-col gap-1.5 mb-6">
+                        <label className="text-sm font-bold text-text-primary">Document Name</label>
+                        <input
+                            type="text"
+                            value={docName}
+                            onChange={(e) => setDocName(e.target.value)}
+                            placeholder="e.g. John's Passport, Contract Draft 2"
+                            className="px-4 py-2.5 border-2 border-border-mid bg-upload-bg text-text-primary text-base outline-none focus:border-border-strong"
+                        />
+                    </div>
+
                     <UploadZone
                         file={file}
                         isDragging={isDragging}
@@ -50,7 +64,7 @@ export default function UploadPage() {
                         <p className="text-accent text-sm mb-4">{error}</p>
                     )}
 
-                    <SubmitRow disabled={!hasFile} onSubmit={handleSubmit} />
+                    <SubmitRow disabled={!canSubmit} onSubmit={() => handleSubmit(docName)} />
                 </main>
 
                 <StatusBar online={true} />

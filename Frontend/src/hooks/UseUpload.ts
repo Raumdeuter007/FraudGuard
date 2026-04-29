@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_MIME = ["application/pdf", "image/jpeg", "image/png"];
@@ -12,7 +13,7 @@ interface UseUploadReturn {
   handleDragLeave: (e: React.DragEvent) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent) => void;
-  handleSubmit: () => void;
+  handleSubmit: (name: string) => void;
 }
 
 export default function useUpload(): UseUploadReturn {
@@ -61,10 +62,14 @@ export default function useUpload(): UseUploadReturn {
     [handleFileSelect],
   );
 
-  const handleSubmit = useCallback(() => {
-    if (!file) return;
-    console.log("Submitting:", { file, mode: "tampering" });
-  }, [file]);
+  const navigate = useNavigate();
+  const handleSubmit = useCallback(
+    (name: string) => {
+      if (!file || !name.trim()) return;
+      navigate("/analyzing", { state: { file, name } });
+    },
+    [file, navigate],
+  );
 
   return {
     file,

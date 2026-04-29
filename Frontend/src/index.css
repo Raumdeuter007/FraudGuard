@@ -32,3 +32,12 @@
   --color-btn-shadow: #555;
   --color-badge-border: #bbb;
 }
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
