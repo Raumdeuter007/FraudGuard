@@ -8,8 +8,6 @@ const ACCEPTED_FORMATS = [
     { label: 'PNG', icon: '🖼' },
 ];
 
-const MAX_FILE_SIZE_MB = 10;
-
 interface UploadZoneProps {
     file: File | null;
     isDragging: boolean;
@@ -59,10 +57,19 @@ function UploadZone({
                 onChange={handleInputChange}
             />
 
-            <UploadCloud size={52} strokeWidth={1.5} className="mx-auto mb-4 text-text-primary" />
+            {!file && (
+                <UploadCloud size={52} strokeWidth={1.5} className="mx-auto mb-4 text-text-primary" />
+            )}
 
             {file ? (
                 <>
+                    {file.type.startsWith('image/') && (
+                        <img
+                            src={URL.createObjectURL(file)}
+                            alt="preview"
+                            className="mx-auto mb-4 max-h-48 object-contain border border-border-lighter"
+                        />
+                    )}
                     <p className="text-xl font-black text-text-primary mb-1">{file.name}</p>
                     <p className="text-base text-text-muted-3 mb-6">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -86,9 +93,6 @@ function UploadZone({
                 {ACCEPTED_FORMATS.map((f) => (
                     <FormatBadge key={f.label} label={f.label} icon={f.icon} />
                 ))}
-                <span className="text-sm px-3 py-0.5 border border-border-light text-text-muted-3 bg-paper">
-                    Max {MAX_FILE_SIZE_MB}MB
-                </span>
             </div>
         </div>
     );

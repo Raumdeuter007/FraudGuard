@@ -64,7 +64,7 @@ async def upload(
             imagekit_file_id=upload_result.file_id,
             imagekit_url=upload_result.url,
             file_path=upload_result.file_path,
-            original_name=file_name,
+            original_name=name,
             mime_type=mime_type,
             size_bytes=upload_result.size,
             upload_status="done",
@@ -171,6 +171,69 @@ async def get_file_by_id(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_active_user),
 ):
-    result = await session.execute(select(FileModel).where(FileModel.user_id == str(user.id) and FileModel.id == id))
-    file = result.scalars().first()
-    return file
+    file_result = await session.execute(
+        select(FileModel)
+        .where(FileModel.user_id == str(user.id))
+        .where(FileModel.id == id)
+    )
+    file = file_result.scalars().first()
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    scan_result = await session.execute(
+        select(Scan).where(Scan.file_id == id)
+    )
+    scan = scan_result.scalars().first()
+
+    return {
+        "id": str(file.id),
+        "url": file.imagekit_url,
+        "mime_type": file.mime_type,
+        "name": file.original_name,
+        "size_bytes": file.size_bytes,
+        "upload_status": file.upload_status,
+        "created_at": file.created_at.isoformat(),
+        "scan": {
+            "id": str(scan.id),
+            "scan_type": scan.scan_type,
+            "status": scan.status,
+            "heatmap_url": scan.heatmap_imagekit_url,
+            "tamper_percent": scan.tamper_percent,
+            "is_tampered": bool(scan.is_tampered) if scan.is_tampered is not None else None,
+            "forgery_confidence": scan.forgery_confidence,
+            "is_forged": bool(scan.is_forged) if scan.is_forged is not None else None,
+            "started_at": scan.started_at,
+            "completed_at": scan.completed_at,
+        } if scan else None,
+    }
+
+@router.delete("/{id}", status_code=204)
+async def delete_file(
+    id: str,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(current_active_user),
+):
+    file_result = await session.execute(
+        select(FileModel)
+        .where(FileModel.user_id == str(user.id))
+        .where(FileModel.id == id)
+    )
+    file = file_result.scalars().first()
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Delete from ImageKit
+    scan_result = await session.execute(select(Scan).where(Scan.file_id == id))
+    scan = scan_result.scalars().first()
+
+    imagekit_deletes = [file.imagekit_file_id]
+    if scan and scan.heatmap_imagekit_file_id is not None:
+        imagekit_deletes.append(scan.heatmap_imagekit_file_id)
+
+    for ik_id in imagekit_deletes:
+        await asyncio.get_running_loop().run_in_executor(
+            None, lambda i=ik_id: imageKit.files.delete(str(i)) 
+        )
+
+    await session.delete(file)
+    await session.commit()
