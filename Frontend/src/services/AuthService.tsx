@@ -9,6 +9,21 @@ interface AuthResponse {
     };
 }
 
+interface RegisterCredentials {
+    email: string;
+    password: string;
+    name: string;
+}
+
+interface RegisterResponse {
+    id: string;
+    email: string;
+    name: string;
+    is_active: boolean;
+    is_verified: boolean;
+}
+
+
 export async function loginRequest(credentials: LoginCredentials): Promise<AuthResponse> {
     const body = new URLSearchParams({
         grant_type: 'password',
@@ -39,4 +54,18 @@ export async function logoutRequest(token: string): Promise<void> {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
     });
+}
+
+export async function registerRequest(credentials: RegisterCredentials): Promise<RegisterResponse> {
+    const res = await fetch(`${BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail ?? 'Registration failed');
+    }
+    return res.json();
 }

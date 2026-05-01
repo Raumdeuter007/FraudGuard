@@ -22,7 +22,7 @@ export default function AnalyzingPage() {
     const { stepStatuses, error } = useAnalysis(state?.file ?? null, state?.name ?? null);
 
     return (
-        <div className="max-w-3xl mx-auto my-8 bg-paper border-2 border-border-strong shadow-[6px_6px_0_#bbb,12px_12px_0_#ddd]">
+        <div className="max-w-3xl mx-auto mt-8 bg-paper border-2 border-border-strong shadow-[6px_6px_0_#bbb,12px_12px_0_#ddd]">
             <div className="px-10 py-12">
                 <div className="text-center mb-10">
                     <h1 className="text-2xl font-black text-text-primary mb-2">

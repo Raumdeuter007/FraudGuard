@@ -45,7 +45,7 @@ export default function Navbar() {
                             >
                                 <button className="flex items-center gap-2 px-4 py-1.5 border-2 border-border-strong text-text-primary cursor-pointer">
                                     <User size={16} strokeWidth={2} />
-                                    <span className="text-base font-semibold">Welcome, {user?.email ?? 'User'}</span>
+                                    <span className="text-base font-semibold">Welcome, {user?.name ?? 'User'}</span>
                                 </button>
 
                                 {profileOpen && (

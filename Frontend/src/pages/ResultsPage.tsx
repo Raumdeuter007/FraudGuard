@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useResults from '../hooks/UseResults';
 import StatusBar from '../components/StatusBar';
+import ImageLightbox from '../components/ImageLightBox';
 
 type ViewMode = 'both' | 'original' | 'heatmap';
 
 export default function ResultsPage() {
     const { id } = useParams();
+    const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
     const navigate = useNavigate();
     const { result, error } = useResults(id);
     const [viewMode, setViewMode] = useState<ViewMode>('both');
@@ -34,7 +36,7 @@ export default function ResultsPage() {
     const gridCols = viewMode === 'both' ? 'grid-cols-2' : 'grid-cols-1';
 
     return (
-        <div className="max-w-5xl mx-auto my-8 bg-paper border-2 border-border-strong shadow-[6px_6px_0_#bbb,12px_12px_0_#ddd]">
+        <div className="max-w-5xl mx-auto mt-8 bg-paper border-2 border-border-strong shadow-[6px_6px_0_#bbb,12px_12px_0_#ddd]">
             <div className="px-10 py-9">
 
                 {/* Verdict bar */}
@@ -58,7 +60,7 @@ export default function ResultsPage() {
                     </div>
                     <div className="text-right">
                         <p className="text-3xl font-black text-text-primary">{tamperPercent}%</p>
-                        <p className="text-xs text-text-muted-3">tampered area</p>
+                        <p className="text-xs text-text-muted-3">Tamper Confidence</p>
                     </div>
                 </div>
 
@@ -76,6 +78,7 @@ export default function ResultsPage() {
                     ))}
                 </div>
 
+
                 {/* Images */}
                 <div className={`grid ${gridCols} gap-4 mb-6`}>
                     {viewMode !== 'heatmap' && (
@@ -85,7 +88,11 @@ export default function ResultsPage() {
                                 <span className="text-xs text-text-muted-3">{result.mime_type}</span>
                             </div>
                             <div className="p-3 bg-upload-bg flex items-center justify-center min-h-56">
-                                <img src={result.url} alt="Original" className="max-w-full max-h-56 object-contain" />
+                                <img src={result.url}
+                                    alt="Original"
+                                    className="max-w-full max-h-56 object-contain"
+                                    onClick={() => setLightboxSrc(result.url)}
+                                />
                             </div>
                         </div>
                     )}
@@ -96,7 +103,26 @@ export default function ResultsPage() {
                                 <span className="text-xs text-accent font-semibold">Regions highlighted</span>
                             </div>
                             <div className="p-3 bg-upload-bg flex items-center justify-center min-h-56">
-                                <img src={scan.heatmap_url} alt="Heatmap" className="max-w-full max-h-56 object-contain" />
+                                <img
+                                    src={scan.heatmap_url}
+                                    alt="Heatmap"
+                                    className="max-w-full max-h-56 object-contain"
+                                    onClick={() => setLightboxSrc(scan.heatmap_url)}
+                                />
+                            </div>
+                            {/* Legend */}
+                            <div className="px-4 py-3 border-t border-border-lighter">
+                                <div
+                                    className="w-full h-3 rounded-sm mb-1"
+                                    style={{ background: 'linear-gradient(to right, #00008b, #0000ff, #00ffff, #ffff00, #ff7700, #ff0000)' }}
+                                />
+                                <div className="flex justify-between">
+                                    <span className="text-xs text-text-muted-3">No tampering</span>
+                                    <span className="text-xs text-text-muted-3">Low</span>
+                                    <span className="text-xs text-text-muted-3">Medium</span>
+                                    <span className="text-xs text-text-muted-3">High</span>
+                                    <span className="text-xs text-accent font-semibold">Tampered</span>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -131,6 +157,14 @@ export default function ResultsPage() {
                         ))}
                     </div>
                 </div>
+
+                {lightboxSrc && (
+                    <ImageLightbox
+                        src={lightboxSrc}
+                        alt="Full view"
+                        onClose={() => setLightboxSrc(null)}
+                    />
+                )}
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3">

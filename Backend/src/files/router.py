@@ -119,7 +119,7 @@ async def upload(
             heatmap_imagekit_file_id=overlay_result.file_id,
             heatmap_imagekit_url=overlay_result.url,
             heatmap_file_path=overlay_result.file_path,
-            tamper_percent=mean_score,
+            tamper_percent=score,
             is_tampered=is_tampered,
             status="done",
             started_at=start_time,
