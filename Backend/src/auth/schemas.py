@@ -1,11 +1,14 @@
 import uuid
+from pydantic import EmailStr
 from fastapi_users import schemas
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
-    pass
+    name: str
 
-class UserCreate(schemas.BaseUserCreate):
-    pass
+class UserCreate(schemas.CreateUpdateDictModel):
+    email: EmailStr
+    password: str
+    name: str
 
 class UserUpdate(schemas.BaseUserUpdate):
-    pass
+    name: str

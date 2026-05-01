@@ -29,11 +29,6 @@ export default function HistoryRow({ file, index, onDelete }: HistoryRowProps) {
             <td className="px-4 py-3 text-sm text-text-primary font-medium max-w-200px truncate">{file.name}</td>
             <td className="px-4 py-3 text-sm text-text-muted-2">{file.mime_type}</td>
             <td className="px-4 py-3 text-sm text-text-muted-2">{formattedDate}</td>
-            <td className="px-4 py-3">
-                <span className="text-xs font-semibold px-2 py-0.5 border border-border-light text-text-muted-2 bg-paper">
-                    Pending
-                </span>
-            </td>
             <td
                 className="px-4 py-3"
                 onClick={(e) => e.stopPropagation()}

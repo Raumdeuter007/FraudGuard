@@ -1,7 +1,7 @@
 import type { HistoryFile } from '../services/HistoryService';
 import HistoryRow from './HistoryRow';
 
-const COLUMNS = ['Sr. No.', 'Name', 'Type', 'Uploaded At', 'Status', 'Actions'];
+const COLUMNS = ['Sr. No.', 'Name', 'Type', 'Uploaded At', 'Actions'];
 
 interface HistoryTableProps {
     files: HistoryFile[];
