@@ -96,7 +96,23 @@ The server will start at `http://localhost:8000`
 
 ### Frontend
 
-> 🚧 Frontend stack is TBD — instructions will be added here once decided.
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app will start at `http://localhost:5173`
+
+| URL                     | Description  |
+| ----------------------- | ------------ |
+| `http://localhost:5173` | Frontend app |
+
+> Requires the backend to be running at `http://localhost:8000`. Create a `.env` file in the `frontend/` directory:
+>
+> ```
+> VITE_API_URL=http://localhost:8000
+> ```
 
 ---
 
@@ -112,7 +128,21 @@ fraudguard/
 │   │   ├── database.py
 │   │   ├── models.py
 │   │   └── main.py
-├── frontend/                # TBD
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # Reusable UI components
+│   │   ├── context/          # React context providers
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── pages/            # Route-level page components
+│   │   ├── router/           # Route definitions and guards
+│   │   ├── services/         # API call functions
+│   │   ├── types/            # TypeScript type definitions
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── .env
+│   ├── index.html
+│   ├── vite.config.ts
+│   └── package.json
 └── README.md
 ```
 
